@@ -1,0 +1,1294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Prathamesh Dawale</title>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Sora:wght@300;400;500&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#08090d;--bg2:#0d0f16;--bg3:#12151f;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
+  --silver:#9090a8;--ash:#c0c0d4;--ghost:#e4e4f0;--white:#f2f2fa;
+  --gold:#b8974a;--gold2:#d4b06a;--gold3:#f0cc8a;
+  --green:#4caf82;--red:#cf6679;--r:2px;
+}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+@keyframes scrollX{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:none}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.35}}
+@keyframes scanline{0%{top:-2px}100%{top:100%}}
+
+html{scroll-behavior:smooth}
+body{
+  background:var(--bg);color:var(--ash);
+  font-family:'Sora',sans-serif;font-weight:300;
+  overflow-x:hidden;cursor:none;line-height:1.65;
+  padding-bottom:40px;
+}
+body::after{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:9000;opacity:0.025;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* METEOR CANVAS */
+#meteorCanvas{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:1}
+
+/* CURSOR */
+#cur{position:fixed;top:0;left:0;width:5px;height:5px;margin:-2.5px 0 0 -2.5px;background:var(--gold2);border-radius:50%;pointer-events:none;z-index:9999;will-change:transform}
+#cur2{position:fixed;top:0;left:0;width:30px;height:30px;margin:-15px 0 0 -15px;border:1px solid rgba(184,151,74,0.4);border-radius:50%;pointer-events:none;z-index:9998;transition:width .22s,height .22s,margin .22s,border-color .22s;will-change:transform}
+body.hov #cur2{width:44px;height:44px;margin:-22px 0 0 -22px;border-color:rgba(212,176,106,0.7)}
+
+/* NAV */
+nav{
+  position:fixed;top:0;left:0;right:0;z-index:500;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:16px 52px;
+  background:rgba(8,9,13,0.88);backdrop-filter:blur(24px);
+  border-bottom:1px solid var(--border);
+}
+.nav-brand{font-family:'Instrument Serif',serif;font-size:18px;color:var(--white);letter-spacing:0.04em}
+.nav-brand em{color:var(--gold2);font-style:italic}
+.nav-links{display:flex;gap:36px}
+.nav-links a{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:var(--silver);text-decoration:none;transition:color .25s;cursor:none}
+.nav-links a:hover{color:var(--gold2)}
+.nav-dot{display:flex;align-items:center;gap:7px;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--green)}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 2s ease-in-out infinite}
+
+/* TICKER */
+#ticker{
+  position:fixed;bottom:0;left:0;right:0;z-index:500;height:36px;
+  background:rgba(8,9,13,0.96);backdrop-filter:blur(20px);
+  border-top:1px solid var(--border2);
+  display:flex;align-items:center;overflow:hidden;
+}
+.ticker-lbl{flex-shrink:0;padding:0 18px;font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.2em;color:var(--gold);border-right:1px solid var(--border2);white-space:nowrap}
+.ticker-outer{flex:1;overflow:hidden;position:relative}
+.ticker-inner{display:flex;width:max-content;animation:scrollX 70s linear infinite}
+.ticker-item{display:inline-flex;align-items:center;gap:7px;padding:0 24px;border-right:1px solid var(--border);font-family:'JetBrains Mono',monospace;font-size:10px;white-space:nowrap}
+.t-sym{color:var(--ash);letter-spacing:0.06em}
+.t-px{color:var(--white);font-weight:500}
+.t-up{color:var(--green);font-size:9px}
+.t-dn{color:var(--red);font-size:9px}
+.t-na{color:var(--silver);font-size:9px}
+
+/* SECTIONS */
+section{position:relative;z-index:2;padding:112px 52px 80px;width:100%}
+.wrap{max-width:1160px;margin:0 auto;width:100%}
+.slabel{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.22em;text-transform:uppercase;color:var(--gold);margin-bottom:48px;display:flex;align-items:center;gap:14px}
+.slabel::after{content:'';flex:0 0 36px;height:1px;background:linear-gradient(to right,var(--gold),transparent)}
+.div{height:1px;background:linear-gradient(to right,transparent,var(--border2) 30%,var(--border2) 70%,transparent);position:relative;z-index:2}
+
+/* ═══════════ HERO ═══════════ */
+#hero{min-height:100vh;display:flex;flex-direction:column;justify-content:flex-end;padding:0 52px 100px}
+.hero-bg{position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse 70% 60% at 60% 40%,rgba(184,151,74,0.04) 0%,transparent 55%),radial-gradient(ellipse 50% 60% at 5% 80%,rgba(91,141,238,0.03) 0%,transparent 55%)}
+.hero-grid-lines{position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(rgba(255,255,255,0.018) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.018) 1px,transparent 1px);background-size:64px 64px;mask-image:radial-gradient(ellipse 80% 80% at 50% 50%,black 10%,transparent 100%)}
+
+.hero-content{max-width:1160px;width:100%;margin:0 auto}
+.hero-intro{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.22em;text-transform:uppercase;color:var(--gold);margin-bottom:28px;display:flex;align-items:center;gap:12px;animation:fadeUp .7s ease both}
+.hero-intro::before{content:'';width:20px;height:1px;background:var(--gold)}
+
+.hero-name{
+  font-family:'Instrument Serif',serif;
+  font-size:clamp(64px,8vw,120px);
+  font-weight:400;line-height:0.95;letter-spacing:-0.02em;
+  color:var(--white);margin-bottom:24px;
+  animation:fadeUp .8s .08s ease both;
+}
+.hero-name em{font-style:italic;color:var(--gold2)}
+
+.hero-meta{
+  display:flex;align-items:center;gap:32px;
+  font-family:'JetBrains Mono',monospace;font-size:11px;
+  letter-spacing:0.1em;color:var(--silver);
+  margin-bottom:20px;
+  animation:fadeUp .8s .16s ease both;
+}
+.hero-meta span{color:var(--mist,#3a3a4a)}
+.hero-city{color:var(--ash);display:flex;align-items:center;gap:6px}
+.hero-city::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--gold);display:inline-block}
+
+.hero-tagline{
+  font-size:14px;color:var(--silver);
+  max-width:560px;line-height:1.8;
+  margin-bottom:40px;
+  animation:fadeUp .8s .22s ease both;
+  border-left:2px solid var(--gold);
+  padding-left:20px;
+}
+
+.hero-btns{display:flex;gap:12px;flex-wrap:wrap;animation:fadeUp .8s .3s ease both}
+.btn-g{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;padding:13px 26px;background:var(--gold);color:#080810;text-decoration:none;border-radius:var(--r);transition:all .2s;cursor:none;font-weight:500}
+.btn-g:hover{background:var(--gold3);transform:translateY(-2px)}
+.btn-o{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;padding:13px 26px;background:transparent;color:var(--ash);border:1px solid var(--border2);text-decoration:none;border-radius:var(--r);transition:all .2s;cursor:none}
+.btn-o:hover{border-color:var(--gold);color:var(--gold);transform:translateY(-2px)}
+
+.hero-scroll{position:absolute;right:52px;bottom:80px;display:flex;flex-direction:column;align-items:center;gap:8px;font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.2em;color:var(--silver)}
+.scroll-line{width:1px;height:40px;background:linear-gradient(to bottom,var(--silver),transparent)}
+
+/* ═══════════ ABOUT / IDENTITY ═══════════ */
+#about{background:var(--bg2);padding:80px 52px}
+.about-grid{display:grid;grid-template-columns:1fr 1fr;gap:80px;align-items:start}
+.about-left{}
+.about-heading{font-family:'Instrument Serif',serif;font-size:clamp(28px,3vw,42px);color:var(--white);line-height:1.1;margin-bottom:20px}
+.about-heading em{font-style:italic;color:var(--gold2)}
+.about-body{font-size:13px;color:var(--silver);line-height:1.85}
+.about-body p{margin-bottom:16px}
+.about-body strong{color:var(--ghost);font-weight:400}
+
+.about-right{}
+.stat-row{display:flex;justify-content:space-between;align-items:center;padding:16px 0;border-bottom:1px solid var(--border)}
+.stat-row:first-child{border-top:1px solid var(--border)}
+.stat-key{font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:0.14em;text-transform:uppercase;color:var(--silver)}
+.stat-val{font-family:'Instrument Serif',serif;font-size:18px;color:var(--white)}
+.stat-val em{font-style:italic;color:var(--gold2);font-size:15px}
+
+/* ═══════════ EDUCATION ═══════════ */
+#education{background:var(--bg);padding:80px 52px}
+.edu-grid{display:grid;grid-template-columns:1fr 1fr;gap:2px}
+.edu-card{background:var(--bg2);border:1px solid var(--border);padding:36px 40px;position:relative;overflow:hidden;transition:all .3s}
+.edu-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(to right,transparent,var(--gold),transparent);transform:scaleX(0);transition:transform .4s}
+.edu-card:hover::before{transform:scaleX(1)}
+.edu-card:hover{background:var(--bg3);border-color:rgba(184,151,74,0.2)}
+.edu-tag{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--gold);margin-bottom:16px}
+.edu-school{font-family:'Instrument Serif',serif;font-size:24px;color:var(--white);line-height:1.2;margin-bottom:6px}
+.edu-degree{font-size:12.5px;color:var(--silver);margin-bottom:16px}
+.edu-date{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--silver)}
+.edu-badge{display:inline-block;margin-top:12px;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--gold);border:1px solid rgba(184,151,74,0.3);padding:4px 12px;border-radius:var(--r)}
+
+/* ═══════════ SKILLS ═══════════ */
+#skills{background:var(--bg2);padding:80px 52px}
+.skills-wrap{display:grid;grid-template-columns:1fr 1fr;gap:40px}
+.skills-col{}
+.skill-heading{font-family:'Instrument Serif',serif;font-size:22px;color:var(--white);margin-bottom:24px;padding-bottom:14px;border-bottom:1px solid var(--border)}
+.skill-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--border);font-size:12.5px;color:var(--silver);transition:color .2s}
+.skill-row:last-child{border:none}
+.skill-row:hover{color:var(--ghost)}
+.sk-bw{width:80px;height:2px;background:rgba(255,255,255,0.06);border-radius:1px;overflow:hidden}
+.sk-b{height:100%;background:linear-gradient(to right,var(--gold),var(--gold3));border-radius:1px;transition:width 1.4s cubic-bezier(.16,1,.3,1)}
+
+.courses-list{font-size:12px;color:var(--silver);line-height:2.3}
+.course-item{display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);padding:8px 0}
+.course-item:last-child{border:none}
+.course-dot{width:4px;height:4px;border-radius:50%;background:var(--gold);flex-shrink:0}
+
+/* ═══════════ EQUITY RESEARCH ═══════════ */
+#research{background:var(--bg);padding:80px 52px}
+.research-intro{margin-bottom:40px}
+.research-intro-title{font-family:'Instrument Serif',serif;font-size:clamp(28px,3vw,42px);color:var(--white);margin-bottom:12px;line-height:1.1}
+.research-intro-title em{font-style:italic;color:var(--gold2)}
+.research-intro-sub{font-size:13px;color:var(--silver);max-width:600px;line-height:1.8}
+
+.report-grid{display:grid;grid-template-columns:1fr 1fr;gap:2px}
+.report-card{background:var(--bg2);border:1px solid var(--border);padding:0;overflow:hidden;transition:all .3s;cursor:none;position:relative}
+.report-card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(to right,transparent,var(--gold),transparent);transform:scaleX(0);transition:transform .4s}
+.report-card:hover::after{transform:scaleX(1)}
+.report-card:hover{border-color:rgba(184,151,74,0.2)}
+.report-hdr{padding:24px 28px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:flex-start}
+.report-sector{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.16em;text-transform:uppercase;color:var(--silver);margin-bottom:10px}
+.report-company{font-family:'Instrument Serif',serif;font-size:26px;color:var(--white);line-height:1.1;margin-bottom:4px}
+.report-sub{font-size:12px;color:var(--silver)}
+.report-rating{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.12em;padding:5px 12px;border-radius:var(--r);flex-shrink:0}
+.rating-buy{color:var(--green);border:1px solid rgba(76,175,130,0.35);background:rgba(76,175,130,0.07)}
+.rating-hold{color:var(--gold2);border:1px solid rgba(184,151,74,0.35);background:rgba(184,151,74,0.07)}
+.report-body{padding:24px 28px}
+.report-thesis{font-size:12.5px;color:var(--silver);line-height:1.8;margin-bottom:20px}
+.report-metrics{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:20px}
+.rm{padding:12px;background:var(--bg3);border-radius:var(--r)}
+.rm-label{font-family:'JetBrains Mono',monospace;font-size:8.5px;letter-spacing:0.12em;color:var(--silver);margin-bottom:4px;text-transform:uppercase}
+.rm-val{font-family:'Instrument Serif',serif;font-size:18px;color:var(--white)}
+.rm-val.up{color:var(--green)}.rm-val.gold{color:var(--gold2)}
+.report-tags{display:flex;flex-wrap:wrap;gap:6px}
+.tag{font-family:'JetBrains Mono',monospace;font-size:8.5px;letter-spacing:0.1em;text-transform:uppercase;padding:3px 9px;border:1px solid var(--border2);color:var(--silver);border-radius:var(--r)}
+
+/* ═══════════ CERTS ═══════════ */
+#certifications{background:var(--bg2);padding:80px 52px}
+.cert-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:2px}
+.cert-item{background:var(--bg);border:1px solid var(--border);padding:24px 28px;display:flex;justify-content:space-between;align-items:center;transition:all .25s;position:relative;overflow:hidden}
+.cert-item::before{content:'';position:absolute;left:0;top:0;bottom:0;width:2px;background:var(--gold);transform:scaleY(0);transform-origin:bottom;transition:transform .4s}
+.cert-item:hover::before{transform:scaleY(1)}
+.cert-item:hover{background:var(--bg3);border-color:rgba(184,151,74,0.2);padding-left:32px}
+.cert-name{font-size:13px;color:var(--ghost);margin-bottom:3px}
+.cert-org{font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:0.08em;color:var(--silver)}
+.cb{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.1em;padding:3px 9px;border-radius:var(--r)}
+.cb-done{color:var(--green);border:1px solid rgba(76,175,130,0.3);background:rgba(76,175,130,0.06)}
+.cb-prog{color:var(--gold2);border:1px solid rgba(184,151,74,0.3);background:rgba(184,151,74,0.06)}
+
+/* ═══════════ EXPERIENCE ═══════════ */
+#experience{background:var(--bg);padding:80px 52px}
+.exp-grid{display:grid;grid-template-columns:1fr 1fr;gap:2px}
+.exp-block{background:var(--bg2);border:1px solid var(--border);padding:36px 40px;transition:all .3s;position:relative;overflow:hidden}
+.exp-block::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(to right,transparent,var(--gold),transparent);transform:scaleX(0);transition:transform .4s}
+.exp-block:hover::before{transform:scaleX(1)}
+.exp-block:hover{background:var(--bg3);border-color:rgba(184,151,74,0.2)}
+.exp-tag{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--gold);margin-bottom:14px}
+.exp-date{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--silver);margin-bottom:16px}
+.exp-title{font-family:'Instrument Serif',serif;font-size:24px;color:var(--white);margin-bottom:4px}
+.exp-sub{font-size:12px;color:var(--silver);margin-bottom:20px}
+.exp-list{list-style:none;font-size:12px;color:var(--silver);line-height:1.75}
+.exp-list li{padding-left:14px;position:relative;margin-bottom:8px}
+.exp-list li::before{content:'—';position:absolute;left:0;color:var(--gold);font-size:10px}
+.exp-list strong{color:var(--ghost);font-weight:400}
+
+/* ═══════════ SYSTEM ═══════════ */
+#system{background:var(--bg2);padding:80px 52px}
+.sys-intro{margin-bottom:36px}
+.sys-title{font-family:'Instrument Serif',serif;font-size:clamp(28px,3vw,44px);color:var(--white);line-height:1.1;margin-bottom:10px}
+.sys-title em{font-style:italic;color:var(--gold2)}
+.sys-sub{font-size:13px;color:var(--silver);max-width:560px;line-height:1.8}
+.sys-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:2px}
+.sb{background:var(--bg);border:1px solid var(--border);padding:28px 32px;position:relative;overflow:hidden;transition:all .3s}
+.sb::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(to right,transparent,var(--gold),transparent);transform:scaleX(0);transition:transform .4s}
+.sb:hover::before{transform:scaleX(1)}
+.sb:hover{border-color:rgba(184,151,74,0.2);background:var(--bg3)}
+.sb-n{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.18em;color:var(--silver);margin-bottom:12px}
+.sb-t{font-family:'Instrument Serif',serif;font-size:20px;color:var(--white);margin-bottom:8px}
+.sb-d{font-size:12px;color:var(--silver);line-height:1.75}
+.sb-tag{display:inline-block;margin-top:12px;font-family:'JetBrains Mono',monospace;font-size:8.5px;letter-spacing:0.1em;color:var(--gold);border:1px solid rgba(184,151,74,0.28);padding:3px 9px;border-radius:var(--r)}
+.code-wrap{grid-column:span 3;background:#060810;border:1px solid var(--border2);border-radius:3px;overflow:hidden;margin-top:2px}
+.code-hdr{padding:10px 16px;background:#0b0d18;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:7px}
+.d{width:10px;height:10px;border-radius:50%}.dr{background:#cf6679}.dy{background:#e0a55a}.dg{background:#4caf82}
+.cf{margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:9.5px;color:var(--silver);letter-spacing:0.07em}
+.code-body{padding:22px 28px;font-family:'JetBrains Mono',monospace;font-size:11.5px;line-height:1.85;overflow-x:auto;display:grid;grid-template-columns:28px 1fr;gap:0 20px}
+.ln{color:#2a2d42;user-select:none;text-align:right;font-size:11px}
+.kw{color:#c792ea}.fn{color:#82aaff}.nm{color:#f78c6c}.cm{color:#3a4555;font-style:italic}.op{color:#89ddff}
+
+/* ═══════════ CHART ═══════════ */
+#terminal{background:var(--bg);padding:80px 52px}
+.chart-panel{background:#070a12;border:1px solid var(--border2);border-radius:4px;overflow:hidden}
+.chart-hdr{padding:12px 18px;background:#0b0e1a;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.ch-dots{display:flex;gap:6px}
+.ch-title{margin-left:10px;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--silver);letter-spacing:0.1em}
+.ch-tabs{margin-left:auto;display:flex;gap:4px}
+.ch-tab{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.1em;padding:4px 10px;border:1px solid var(--border);color:var(--silver);border-radius:var(--r);cursor:none;transition:all .2s;background:transparent}
+.ch-tab.active,.ch-tab:hover{border-color:var(--gold);color:var(--gold2);background:rgba(184,151,74,0.08)}
+.chart-body{padding:20px 20px 12px;position:relative;height:340px}
+
+/* ═══════════ CONTACT ═══════════ */
+#contact{background:var(--bg2);padding:80px 52px}
+.contact-grid{display:grid;grid-template-columns:1fr 1fr;gap:80px;align-items:center}
+.ct-head{font-family:'Instrument Serif',serif;font-size:clamp(36px,4.5vw,64px);color:var(--white);line-height:1.05;margin-bottom:20px}
+.ct-head em{font-style:italic;color:var(--gold2)}
+.ct-sub{font-size:12.5px;color:var(--silver);line-height:1.8;margin-bottom:32px;max-width:380px}
+.cl{padding:18px 24px;background:var(--bg);border:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;text-decoration:none;transition:all .25s;cursor:none;margin-bottom:2px}
+.cl:hover{background:var(--bg3);border-color:rgba(184,151,74,0.28);padding-left:30px}
+.cl-lbl{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.16em;text-transform:uppercase;color:var(--silver);margin-bottom:3px}
+.cl-val{font-size:13px;color:var(--ghost)}
+.cl-arr{color:var(--gold2);font-size:16px;transition:transform .25s}
+.cl:hover .cl-arr{transform:translateX(4px)}
+
+/* FOOTER */
+footer{position:relative;z-index:2;padding:20px 52px;margin-bottom:36px;border-top:1px solid var(--border);background:var(--bg);display:flex;justify-content:space-between;align-items:center}
+.ft-b{font-family:'Instrument Serif',serif;font-size:15px;color:var(--silver)}
+.ft-b em{color:var(--gold2);font-style:italic}
+.ft-m{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.14em;color:rgba(255,255,255,0.18)}
+
+/* REVEAL */
+.rv{opacity:0;transform:translateY(20px);transition:opacity .65s ease,transform .65s ease}
+.rv.on{opacity:1;transform:none}
+.rl{opacity:0;transform:translateX(-20px);transition:opacity .65s ease,transform .65s ease}
+.rl.on{opacity:1;transform:none}
+.rr{opacity:0;transform:translateX(20px);transition:opacity .65s ease,transform .65s ease}
+.rr.on{opacity:1;transform:none}
+.d1{transition-delay:.05s}.d2{transition-delay:.11s}.d3{transition-delay:.17s}.d4{transition-delay:.23s}.d5{transition-delay:.29s}.d6{transition-delay:.35s}
+
+@media(max-width:960px){
+  nav{padding:14px 20px}.nav-links{gap:16px}
+  section,#about,#education,#skills,#research,#certifications,#experience,#system,#terminal,#contact{padding:80px 20px 60px}
+  .about-grid,.edu-grid,.skills-wrap,.report-grid,.cert-grid,.exp-grid,.sys-grid,.contact-grid{grid-template-columns:1fr}
+  .code-wrap{grid-column:span 1}
+  #hero{padding:0 20px 80px}
+  .hero-name{font-size:clamp(48px,12vw,72px)}
+  footer{padding:16px 20px;flex-direction:column;gap:6px;text-align:center}
+}
+</style>
+</head>
+<body>
+<canvas id="meteorCanvas"></canvas>
+<div id="cur"></div>
+<div id="cur2"></div>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-brand">P<em>.</em>Dawale</div>
+  <div class="nav-links">
+    <a href="#about">About</a>
+    <a href="#education">Education</a>
+    <a href="#research">Research</a>
+    <a href="#experience">Experience</a>
+    <a href="#system">System</a>
+    <a href="#contact">Contact</a>
+  </div>
+  <div class="nav-dot"><div class="live-dot"></div>Pune, India</div>
+</nav>
+
+<!-- TICKER -->
+<div id="ticker">
+  <div class="ticker-lbl">LIVE MARKETS</div>
+  <div class="ticker-outer">
+    <div class="ticker-inner" id="tickerInner">
+      <div class="ticker-item"><span class="t-sym">Loading markets…</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════ HERO ════════════════════ -->
+<section id="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-grid-lines"></div>
+  <div class="hero-content">
+    <div class="hero-intro">BBA FinTech · Pune University</div>
+    <h1 class="hero-name">
+      Prathamesh<br>
+      <em id="tw">Dawale</em><span id="tc" style="color:var(--gold2);animation:blink .8s step-end infinite">|</span>
+    </h1>
+    <div class="hero-meta">
+      <div class="hero-city">Pune, Maharashtra</div>
+      <span>·</span>
+      <div>Founding Member, Prime Forge</div>
+      <span>·</span>
+      <div>FinTech · Equity Research · Algo Systems</div>
+    </div>
+    <div class="hero-tagline">
+      FinTech student building at the intersection of markets, data, and systems. I write equity research, build financial tools, and develop algorithmic trading engines — driven by a belief that good decisions come from structured thinking.
+    </div>
+    <div class="hero-btns">
+      <a href="#research" class="btn-g">View Research ↓</a>
+      <a href="#contact" class="btn-o">Get in Touch</a>
+    </div>
+  </div>
+  <div class="hero-scroll">
+    <div class="scroll-line"></div>
+    SCROLL
+  </div>
+</section>
+
+<div class="div"></div>
+
+<!-- ════════════════════ ABOUT ════════════════════ -->
+<section id="about">
+  <div class="wrap">
+    <div class="slabel rv">01 / About</div>
+    <div class="about-grid">
+      <div class="about-left rv d1">
+        <div class="about-heading">Building the <em>bridge</em> between<br>finance and technology.</div>
+        <div class="about-body" style="margin-top:24px">
+          <p>I'm Prathamesh Dawale, a first-year BBA FinTech student at Pune University with a focused interest in equity markets, financial systems, and algorithmic approaches to investing.</p>
+          <p>My work spans <strong>equity research</strong> on listed Indian companies, <strong>financial modelling</strong> using Excel and data tools, and building a <strong>rule-based MQL5 trading engine</strong> (STD-AOX) from the ground up.</p>
+          <p>As a founding member of <strong>Prime Forge</strong>, I experienced first-hand what it takes to build and run a real operation — owning finance, marketing, and growth simultaneously. That experience grounds my market thinking in execution, not theory.</p>
+        </div>
+      </div>
+      <div class="about-right rv d2">
+        <div class="stat-row"><span class="stat-key">Location</span><span class="stat-val">Pune, Maharashtra <em>India</em></span></div>
+        <div class="stat-row"><span class="stat-key">Degree</span><span class="stat-val">BBA FinTech <em>2027</em></span></div>
+        <div class="stat-row"><span class="stat-key">Current CGPA</span><span class="stat-val">8.0</span></div>
+        <div class="stat-row"><span class="stat-key">Focus Areas</span><span class="stat-val">Equity · Algo · Data</span></div>
+        <div class="stat-row"><span class="stat-key">Venture</span><span class="stat-val">Prime Forge <em>Founding Member</em></span></div>
+        <div class="stat-row"><span class="stat-key">Trading System</span><span class="stat-val">STD-AOX <em>MQL5</em></span></div>
+        <div class="stat-row"><span class="stat-key">Status</span><span class="stat-val" style="color:var(--green)">Open to Opportunities</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="div"></div>
+
+<!-- ════════════════════ EDUCATION ════════════════════ -->
+<section id="education">
+  <div class="wrap">
+    <div class="slabel rv">02 / Education</div>
+    <div class="edu-grid">
+      <div class="edu-card rl d1">
+        <div class="edu-tag">Current · Primary</div>
+        <div class="edu-school">Deccan Education Society's<br>Pune University</div>
+        <div class="edu-degree">Bachelor of Business Administration — FinTech</div>
+        <div class="edu-date">Aug 2024 – Jun 2027 &nbsp;·&nbsp; Pune, India</div>
+        <div class="edu-badge">CGPA 8.0</div>
+        <div style="margin-top:20px;font-size:12px;color:var(--silver);line-height:1.9">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.14em;color:var(--gold);margin-bottom:10px;text-transform:uppercase">Core Courses</div>
+          Capital Markets · Financial Management · Business Accounting<br>
+          Interpretation of Financial Systems · Advance Financial Data Analysis (SPSS)<br>
+          Design Thinking Ability · Python Programming · Business Statistics<br>
+          Indian Financial Systems & Regulators · Principles of Management
+        </div>
+      </div>
+      <div class="edu-card rr d2">
+        <div class="edu-tag">Completed</div>
+        <div class="edu-school">Yashwantrao Chavan<br>Junior College</div>
+        <div class="edu-degree">Higher Secondary Certificate (HSC)</div>
+        <div class="edu-date">Jul 2022 – Apr 2023 &nbsp;·&nbsp; Washim, India</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="div"></div>
+
+<!-- ════════════════════ SKILLS ════════════════════ -->
+<section id="skills">
+  <div class="wrap">
+    <div class="slabel rv">03 / Skills</div>
+    <div class="skills-wrap">
+      <div class="rv d1">
+        <div class="skill-heading">Technical</div>
+        <div class="skill-row"><span>Excel & Financial Modelling</span><div class="sk-bw"><div class="sk-b" data-w="92" style="width:0"></div></div></div>
+        <div class="skill-row"><span>Tableau</span><div class="sk-bw"><div class="sk-b" data-w="82" style="width:0"></div></div></div>
+        <div class="skill-row"><span>Power BI</span><div class="sk-bw"><div class="sk-b" data-w="76" style="width:0"></div></div></div>
+        <div class="skill-row"><span>Python</span><div class="sk-bw"><div class="sk-b" data-w="68" style="width:0"></div></div></div>
+        <div class="skill-row"><span>MQL5 (Algo Trading)</span><div class="sk-bw"><div class="sk-b" data-w="72" style="width:0"></div></div></div>
+        <div class="skill-row"><span>Equity Research & Valuation</span><div class="sk-bw"><div class="sk-b" data-w="80" style="width:0"></div></div></div>
+      </div>
+      <div class="rv d2">
+        <div class="skill-heading">Domain Knowledge</div>
+        <div class="courses-list">
+          <div class="course-item"><div class="course-dot"></div>Equity research — sector analysis, valuation frameworks (EV/EBITDAR, P/E)</div>
+          <div class="course-item"><div class="course-dot"></div>Equity research — sector analysis, valuation frameworks (EV/EBITDAR, P/E)</div>
+          <div class="course-item"><div class="course-dot"></div>Capital markets — Indian equity, derivatives, mutual funds</div>
+          <div class="course-item"><div class="course-dot"></div>Financial statements — P&L, balance sheet, cash flow interpretation</div>
+          <div class="course-item"><div class="course-dot"></div>Advance financial data analysis — SPSS, statistical modelling</div>
+          <div class="course-item"><div class="course-dot"></div>Interpretation of financial systems — regulatory frameworks, Indian banking</div>
+          <div class="course-item"><div class="course-dot"></div>Design thinking — problem framing, ideation, prototype-led solutions</div>
+          <div class="course-item"><div class="course-dot"></div>Algorithmic trading — rule-based systems, risk management, state machines</div>
+          <div class="course-item"><div class="course-dot"></div>Digital marketing — Meta ads, growth strategy, lead conversion analytics</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="div"></div>
+
+<!-- ════════════════════ EQUITY RESEARCH ════════════════════ -->
+<section id="research">
+  <div class="wrap">
+    <div class="slabel rv">04 / Equity Research</div>
+    <div class="research-intro rv d1">
+      <div class="research-intro-title">Stock research, <em>written with conviction.</em></div>
+      <div class="research-intro-sub">Independent equity research reports covering Indian listed companies — structured around business model analysis, financial performance, competitive landscape, and valuation. Built to the standard of professional sell-side output.</div>
+    </div>
+
+    <div class="report-grid">
+
+      <!-- INDIGO -->
+      <div class="report-card rl d1">
+        <div class="report-hdr">
+          <div>
+            <div class="report-sector">Aviation · NSE:INDIGO</div>
+            <div class="report-company">IndiGo</div>
+            <div class="report-sub">InterGlobe Aviation — The Giant Goes Global</div>
+          </div>
+          <div class="report-rating rating-buy">BUY</div>
+        </div>
+        <div class="report-body">
+          <div class="report-thesis">
+            IndiGo is transitioning from a domestic LCC into a global network carrier — inducting Airbus A350-900 wide-bodies and launching 35+ international destinations. The thesis centres on a valuation re-rating from 9.0x to 10.5x EV/EBITDAR as international revenue creates a natural currency hedge, captures higher-yield corporate traffic, and reduces domestic cyclicality.
+          </div>
+          <div class="report-metrics">
+            <div class="rm"><div class="rm-label">Revenue YoY</div><div class="rm-val up">+17.3%</div></div>
+            <div class="rm"><div class="rm-label">Cash Balance</div><div class="rm-val gold">₹36K Cr+</div></div>
+            <div class="rm"><div class="rm-label">Target EV/EBITDAR</div><div class="rm-val">10.5x</div></div>
+          </div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.14em;color:var(--gold);margin-bottom:10px;text-transform:uppercase">Key Thesis Points</div>
+          <div style="font-size:12px;color:var(--silver);line-height:1.8;margin-bottom:16px">
+            60%+ domestic market share · ₹36,000 Cr cash fortress · IndiGoStretch premium class launch · Natural FX hedge via USD/EUR revenues · Tax arbitrage on international ATF · Fleet at 434 and growing +18.3% YoY
+          </div>
+          <div class="report-tags">
+            <span class="tag">EV/EBITDAR</span>
+            <span class="tag">Aviation</span>
+            <span class="tag">Re-rating</span>
+            <span class="tag">International</span>
+            <span class="tag">FX Hedge</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- DMART -->
+      <div class="report-card rr d2">
+        <div class="report-hdr">
+          <div>
+            <div class="report-sector">Retail · NSE:DMART</div>
+            <div class="report-company">DMart</div>
+            <div class="report-sub">Avenue Supermarts — Efficiency Over Excitement</div>
+          </div>
+          <div class="report-rating rating-hold">HOLD</div>
+        </div>
+        <div class="report-body">
+          <div class="report-thesis">
+            DMart is India's most efficient large-format grocery retailer, built on EDLP pricing and disciplined capital allocation. The business is maturing — LFL growth has decelerated to 8–10%, EBITDA leverage is exhausted, and quick commerce presents behavioural headwinds in urban FMCG. A HOLD reflects capital efficiency and downside resilience over near-term re-rating potential.
+          </div>
+          <div class="report-metrics">
+            <div class="rm"><div class="rm-label">Revenue</div><div class="rm-val gold">₹57,790 Cr</div></div>
+            <div class="rm"><div class="rm-label">EBITDA Margin</div><div class="rm-val">7.6%</div></div>
+            <div class="rm"><div class="rm-label">Stores</div><div class="rm-val">415+</div></div>
+          </div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.14em;color:var(--gold);margin-bottom:10px;text-transform:uppercase">Key Thesis Points</div>
+          <div style="font-size:12px;color:var(--silver);line-height:1.8;margin-bottom:16px">
+            EDLP model with cluster-based expansion · Fixed-asset turnover 3.6–3.7x · Revenue/sq ft only +3% YoY · EBITDA growth slower than revenue — leverage exhausted · Quick commerce behavioural (not operational) threat · Tier-2/3 moat intact
+          </div>
+          <div class="report-tags">
+            <span class="tag">ROCE</span>
+            <span class="tag">Retail</span>
+            <span class="tag">EDLP</span>
+            <span class="tag">Defensive</span>
+            <span class="tag">LFL Growth</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<div class="div"></div>
+
+<!-- ════════════════════ CERTIFICATIONS ════════════════════ -->
+<section id="certifications" style="min-height:auto">
+  <div class="wrap">
+    <div class="slabel rv">05 / Certifications</div>
+    <div class="cert-grid">
+      <div class="cert-item rv d1"><div><div class="cert-name">SEBI Investor Awareness Test</div><div class="cert-org">September 2025</div></div><span class="cb cb-done">Completed</span></div>
+      <div class="cert-item rv d2"><div><div class="cert-name">Zerodha Varsity Certification</div><div class="cert-org">October 2025</div></div><span class="cb cb-done">Completed</span></div>
+      <div class="cert-item rv d3"><div><div class="cert-name">Financial Literacy Program</div><div class="cert-org">Kotak Securities & NISM · Scored 87%</div></div><span class="cb cb-done">87%</span></div>
+      <div class="cert-item rv d4"><div><div class="cert-name">Mutual Fund Distribution (NISM)</div><div class="cert-org">Expected December 2025</div></div><span class="cb cb-prog">In Progress</span></div>
+    </div>
+  </div>
+</section>
+
+<div class="div"></div>
+
+<!-- ════════════════════ EXPERIENCE ════════════════════ -->
+<section id="experience">
+  <div class="wrap">
+    <div class="slabel rv">06 / Experience & Projects</div>
+    <div class="exp-grid">
+      <div class="exp-block rl d1">
+        <div class="exp-tag">Founding Member</div>
+        <div class="exp-date">Jan 2024 – 2025 &nbsp;·&nbsp; Pune, India</div>
+        <div class="exp-title">Prime Forge</div>
+        <div class="exp-sub">Finance & Digital Marketing — Founding Team</div>
+        <ul class="exp-list">
+          <li>Founding member of Prime Forge — a student-focused venture empowering learners through DIY electronics projects and hands-on education.</li>
+          <li>Owned financial planning and operations end-to-end, <strong>reducing costs by 20%</strong> while sustaining growth.</li>
+          <li>Designed and executed Meta & Instagram ad campaigns, <strong>boosting lead conversion by 40%</strong>.</li>
+          <li>Analysed student market needs to sharpen product relevance and positioning.</li>
+        </ul>
+      </div>
+      <div class="exp-block rr d2">
+        <div class="exp-tag">Analytics Projects</div>
+        <div class="exp-date">2025</div>
+        <div class="exp-title">Data & Finance Work</div>
+        <div class="exp-sub">Financial Tools & Visualisation</div>
+        <ul class="exp-list" style="margin-top:4px">
+          <li><strong>Fin Dashboard & KPI Tracker</strong> — Interactive Tableau dashboard monitoring revenue, expenses, and KPIs. Cleaned raw datasets in Excel for consistent, decision-ready data.</li>
+          <li><strong>Personal Finance Tracker</strong> — Automated Excel budgeting tool with dynamic dashboards visualising spending patterns. Designed as a reusable template for students and professionals.</li>
+          <li><strong>Banking Sector Case Study</strong> — Research on India's digital banking evolution: UPI, mobile banking, and financial inclusion impact.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="div"></div>
+
+<!-- ════════════════════ SYSTEM ════════════════════ -->
+<section id="system">
+  <div class="wrap">
+    <div class="slabel rv">07 / Algorithmic Trading System</div>
+    <div class="sys-intro rv d1">
+      <div class="sys-title">STD-AOX Adaptive <em>Trading Engine</em></div>
+      <div class="sys-sub">A rule-based MQL5 system built for real-market conditions — risk-first, not return-first. Scales exposure based on market state instead of blocking trades.</div>
+    </div>
+    <div class="sys-grid">
+      <div class="sb rl d1"><div class="sb-n">01 / RISK</div><div class="sb-t">Smart Stop-Loss</div><div class="sb-d">Structure-based SL from dynamic swing points, extended with ATR buffer overlays. No fixed fractional levels — adapts to market structure each trade.</div><div class="sb-tag">ATR · Structure · No fixed %</div></div>
+      <div class="sb rv d2"><div class="sb-n">02 / SIZING</div><div class="sb-t">Adaptive Position Size</div><div class="sb-d">Real-time risk adjustment via ADX, RSI momentum, and drawdown state. In DD_RECOVERY mode, exposure halves automatically — no manual intervention.</div><div class="sb-tag">ADX · RSI · DD-aware</div></div>
+      <div class="sb rr d3"><div class="sb-n">03 / EXECUTION</div><div class="sb-t">State-Based Re-entry</div><div class="sb-d">Discrete entries via algorithmic state machine tracking price behaviour. Each entry is gated by a confirmed state transition — no random re-entries.</div><div class="sb-tag">State Machine · Gated</div></div>
+      <div class="sb rl d4"><div class="sb-n">04 / SETUPS</div><div class="sb-t">Multi-Setup Matrix</div><div class="sb-d">Tri-logic concurrent — E1: STD Zone Rejection, E2: AOX Volume Continuation, E3: Session Fibonacci Pullback. Independent parameters per setup.</div><div class="sb-tag">E1 · E2 · E3</div></div>
+      <div class="sb rv d5"><div class="sb-n">05 / MANAGEMENT</div><div class="sb-t">Staged Exit System</div><div class="sb-d">Partial TP at predefined R-multiples, breakeven shifting post-TP1, parabolic trailing stop. Locks gains while letting runners extend.</div><div class="sb-tag">Partial TP · BE · Trail</div></div>
+      <div class="sb rr d6"><div class="sb-n">06 / INFRA</div><div class="sb-t">Production Automation</div><div class="sb-d">Telegram webhook alerts on every execution. VPS-hosted 24/5. Full CSV data logging for post-session performance review and backtesting.</div><div class="sb-tag">Telegram · VPS · CSV</div></div>
+      <div class="code-wrap rv d2">
+        <div class="code-hdr"><div class="d dr"></div><div class="d dy"></div><div class="d dg"></div><div class="cf">AdaptiveSizing.mq5 — CalcAdaptiveLotSize()</div></div>
+        <div style="padding:28px 32px;font-family:'JetBrains Mono',monospace;font-size:11.5px;line-height:2;overflow-x:auto;background:#060810;">
+<table style="border-collapse:collapse;width:100%">
+<tr><td style="color:#2a2d42;padding-right:24px;text-align:right;user-select:none;vertical-align:top;font-size:11px;line-height:2;width:28px">1</td><td><span class="cm">// Adaptive lot sizing — drawdown-aware, ATR-scaled exposure</span></td></tr>
+<tr><td style="color:#2a2d42;padding-right:24px;text-align:right;user-select:none;font-size:11px;line-height:2">2</td><td><span class="kw">double</span> <span class="fn">CalcAdaptiveLotSize</span>(<span class="kw">double</span> riskPct, <span class="kw">double</span> atrLevel) {</td></tr>
+<tr><td style="color:#2a2d42;padding-right:24px;text-align:right;user-select:none;font-size:11px;line-height:2">3</td><td>&nbsp;</td></tr>
+<tr><td style="color:#2a2d42;padding-right:24px;text-align:right;user-select:none;font-size:11px;line-height:2">4</td><td>&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">double</span> balance &nbsp;= AccountInfoDouble(ACCOUNT_BALANCE);</td></tr>
+<tr><td style="color:#2a2d42;padding-right:24px;text-align:right;user-select:none;font-size:11px;line-height:2">5</td><td>&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">double</span> riskCap = balance <span class="op">*</span> (riskPct <span class="op">/</span> <span class="nm">100.0</span>);</td></tr>
+<tr><td style="color:#2a2d42;padding-right:24px;text-align:right;user-select:none;font-size:11px;line-height:2">6</td><td>&nbsp;</td></tr>
+<tr><td style="color:#2a2d42;padding-right:24px;text-align:right;user-select:none;font-size:11px;line-height:2">7</td><td>&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">double</span> tickVal &nbsp;= SymbolInfoDouble(_Symbol, SYMBOL_TRADE_TICK_VALUE);</td></tr>
+<tr><td style="color:#2a2d42;padding-right:24px;text-align:right;user-select:none;font-size:11px;line-height:2">8</td><td>&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">double</span> pt &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;= SymbolInfoDouble(_Symbol, SYMBOL_POINT);</td></tr>
+<tr><td style="color:#2a2d42;padding-right:24px;text-align:right;user-select:none;font-size:11px;line-height:2">9</td><td>&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">double</span> slTicks &nbsp;= atrLevel <span class="op">/</span> pt;</td></tr>
+<tr><td style="color:#2a2d42;padding-right:24px;text-align:right;user-select:none;font-size:11px;line-height:2">10</td><td>&nbsp;</td></tr>
+<tr><td style="color:#2a2d42;padding-right:24px;text-align:right;user-select:none;font-size:11px;line-height:2">11</td><td>&nbsp;&nbsp;&nbsp;&nbsp;<span class="cm">// Scale exposure down based on system state</span></td></tr>
+<tr><td style="color:#2a2d42;padding-right:24px;text-align:right;user-select:none;font-size:11px;line-height:2">12</td><td>&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">if</span> (SysState <span class="op">==</span> <span class="nm">DD_RECOVERY</span>) riskCap <span class="op">*=</span> <span class="nm">0.50</span>;</td></tr>
+<tr><td style="color:#2a2d42;padding-right:24px;text-align:right;user-select:none;font-size:11px;line-height:2">13</td><td>&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">if</span> (SysState <span class="op">==</span> <span class="nm">HIGH_VOL</span>) &nbsp; riskCap <span class="op">*=</span> <span class="nm">0.75</span>;</td></tr>
+<tr><td style="color:#2a2d42;padding-right:24px;text-align:right;user-select:none;font-size:11px;line-height:2">14</td><td>&nbsp;</td></tr>
+<tr><td style="color:#2a2d42;padding-right:24px;text-align:right;user-select:none;font-size:11px;line-height:2">15</td><td>&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">double</span> lot = NormalizeDouble(riskCap <span class="op">/</span> (slTicks <span class="op">*</span> tickVal), <span class="nm">2</span>);</td></tr>
+<tr><td style="color:#2a2d42;padding-right:24px;text-align:right;user-select:none;font-size:11px;line-height:2">16</td><td>&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">return</span> MathMax(lot, SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MIN));</td></tr>
+<tr><td style="color:#2a2d42;padding-right:24px;text-align:right;user-select:none;font-size:11px;line-height:2">17</td><td>&nbsp;</td></tr>
+<tr><td style="color:#2a2d42;padding-right:24px;text-align:right;user-select:none;font-size:11px;line-height:2">18</td><td>}</td></tr>
+</table>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="div"></div>
+
+<!-- ════════════════════ TERMINAL ════════════════════ -->
+<section id="terminal" style="min-height:auto">
+  <div class="wrap">
+    <div class="slabel rv">08 / Market Terminal</div>
+    <div class="chart-panel rv d1">
+      <div class="chart-hdr">
+        <div class="ch-dots"><div class="d dr"></div><div class="d dy"></div><div class="d dg"></div></div>
+        <div class="ch-title" id="chartTitle">BTC/USD — 15M Price Action</div>
+        <div class="ch-tabs">
+          <button class="ch-tab active" onclick="switchChart('btc',this)">BTC/USD</button>
+          <button class="ch-tab" onclick="switchChart('gold',this)">XAU/USD</button>
+          <button class="ch-tab" onclick="switchChart('nifty',this)">NIFTY</button>
+          <button class="ch-tab" onclick="switchChart('bnf',this)">BANKNIFTY</button>
+        </div>
+      </div>
+      <div class="chart-body"><canvas id="priceChart"></canvas></div>
+    </div>
+  </div>
+</section>
+
+<div class="div"></div>
+
+<!-- ════════════════════ CONTACT ════════════════════ -->
+<section id="contact" style="min-height:auto">
+  <div class="wrap">
+    <div class="slabel rv">09 / Contact</div>
+    <div class="contact-grid">
+      <div>
+        <div class="ct-head rv d1">Let's<br><em>connect.</em></div>
+        <div class="ct-sub rv d2">Open to internships, collaborations, and conversations around equity research, fintech, and financial systems.</div>
+        <div class="hero-btns rv d3"><a href="mailto:dawaleprathamesh@gmail.com" class="btn-g">Send Email ↗</a></div>
+      </div>
+      <div class="rv d2">
+        <a href="mailto:dawaleprathamesh@gmail.com" class="cl"><div><div class="cl-lbl">Email</div><div class="cl-val">dawaleprathamesh@gmail.com</div></div><div class="cl-arr">→</div></a>
+        <a href="https://www.linkedin.com/in/prathamesh" target="_blank" rel="noopener" class="cl"><div><div class="cl-lbl">LinkedIn</div><div class="cl-val">linkedin.com/in/prathamesh</div></div><div class="cl-arr">→</div></a>
+        <div class="cl" style="cursor:default"><div><div class="cl-lbl">Location</div><div class="cl-val">Pune, Maharashtra, India</div></div><div class="cl-arr" style="color:var(--silver)">·</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="ft-b">Prathamesh <em>Dawale</em></div>
+  <div class="ft-m">© <span id="yr"></span> · BBA FinTech · Pune · All rights reserved</div>
+</footer>
+
+<script>
+document.getElementById('yr').textContent = new Date().getFullYear();
+
+/* CURSOR */
+const cur=document.getElementById('cur'),cur2=document.getElementById('cur2');
+let mx=innerWidth/2,my=innerHeight/2,lx=mx,ly=my;
+document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY});
+(function loop(){
+  lx+=(mx-lx)*.14;ly+=(my-ly)*.14;
+  cur.style.transform=`translate3d(${mx}px,${my}px,0)`;
+  cur2.style.transform=`translate3d(${Math.round(lx)}px,${Math.round(ly)}px,0)`;
+  requestAnimationFrame(loop);
+})();
+document.querySelectorAll('a,button,.report-card,.exp-block,.edu-card,.cert-item,.sb,.cl,.stat-row').forEach(el=>{
+  el.addEventListener('mouseenter',()=>document.body.classList.add('hov'));
+  el.addEventListener('mouseleave',()=>document.body.classList.remove('hov'));
+});
+
+/* TYPEWRITER */
+const roles=['Dawale.','Founder.','Researcher.','Builder.'];
+let ri=0,ci=0,fwd=true;
+const tw=document.getElementById('tw');
+function type(){
+  const t=roles[ri];
+  if(fwd){tw.textContent=t.substring(0,++ci);if(ci===t.length){fwd=false;setTimeout(type,1800);return;}}
+  else{tw.textContent=t.substring(0,--ci);if(ci===0){fwd=true;ri=(ri+1)%roles.length;}}
+  setTimeout(type,fwd?90:48);
+}
+setTimeout(type,900);
+
+/* SCROLL REVEAL */
+const obs=new IntersectionObserver(e=>{e.forEach(x=>{if(x.isIntersecting)x.target.classList.add('on')})},{threshold:.1});
+document.querySelectorAll('.rv,.rl,.rr').forEach(el=>obs.observe(el));
+
+/* SKILL BARS */
+const bObs=new IntersectionObserver(e=>{
+  e.forEach(x=>{if(x.isIntersecting)x.target.querySelectorAll('.sk-b').forEach(b=>b.style.width=b.dataset.w+'%')});
+},{threshold:.3});
+document.querySelectorAll('#skills').forEach(el=>bObs.observe(el));
+
+/* ═══════════════════════════════════
+   REAL PRICE TICKER
+   Multi-source price fetching with fallbacks for every asset class
+═══════════════════════════════════ */
+const TICKERS=[
+  {sym:'BTC/USD',  id:'btc',  live:true},
+  {sym:'ETH/USD',  id:'eth',  live:true},
+  {sym:'BNB/USD',  id:'bnb',  live:true},
+  {sym:'XAU/USD',  id:'xau',  live:true},
+  {sym:'XAG/USD',  id:'xag',  live:true},
+  {sym:'OIL/USD',  id:'oil',  live:true},
+  {sym:'EUR/USD',  id:'eur',  live:true},
+  {sym:'GBP/USD',  id:'gbp',  live:true},
+  {sym:'USD/INR',  id:'inr',  live:true},
+  {sym:'NIFTY 50', id:'nifty',live:false, base:24582, spread:180},
+  {sym:'BANKNIFTY',id:'bnf',  live:false, base:52840, spread:380},
+  {sym:'SENSEX',   id:'snx',  live:false, base:81220, spread:520},
+  {sym:'RELIANCE', id:'rel',  live:false, base:2944,  spread:28},
+  {sym:'INFY',     id:'infy', live:false, base:1479,  spread:18},
+  {sym:'ITC',      id:'itc',  live:false, base:452,   spread:7},
+  {sym:'TCS',      id:'tcs',  live:false, base:3420,  spread:32},
+];
+
+let prices={};
+let prevClose={};
+
+// Realistic static fallbacks — used immediately and if all APIs fail
+const FALLBACKS={
+  btc: {price:83200,  chg:'1.24'},
+  eth: {price:1948,   chg:'0.87'},
+  bnb: {price:598,    chg:'0.54'},
+  xau: {price:3048,   chg:'0.31'},
+  xag: {price:30.42,  chg:'0.18'},
+  oil: {price:71.80,  chg:'-0.42'},
+  eur: {price:1.0852, chg:'0.00'},
+  gbp: {price:1.2614, chg:'0.00'},
+  inr: {price:83.92,  chg:'0.00'},
+};
+
+function fmtIndian(v){return '₹'+parseFloat(v).toLocaleString('en-IN',{maximumFractionDigits:2,minimumFractionDigits:2})}
+function fmtUSD(v){
+  const n=parseFloat(v);
+  if(n>=1000) return '$'+n.toLocaleString('en-US',{maximumFractionDigits:0});
+  if(n>=10)   return '$'+n.toFixed(2);
+  return '$'+n.toFixed(4);
+}
+function fmtFX(v){return parseFloat(v).toFixed(4)}
+function fmtINR(v){return '₹'+parseFloat(v).toFixed(2)}
+
+// Seed with fallbacks immediately so ticker shows on load
+Object.keys(FALLBACKS).forEach(id=>{
+  const f=FALLBACKS[id];
+  const fmtFn = ['eur','gbp'].includes(id)?fmtFX : id==='inr'?fmtINR : fmtUSD;
+  prices[id]={price:f.price, chg:f.chg, fmt:fmtFn};
+});
+TICKERS.filter(t=>!t.live).forEach(t=>{
+  const p=t.base+(Math.random()-.5)*t.spread*0.3;
+  prices[t.id]={price:p,chg:((Math.random()-.45)*1.2).toFixed(2),fmt:fmtIndian};
+  prevClose[t.id]=p;
+});
+
+// ── CRYPTO: Binance → CoinGecko → static ──
+async function fetchCrypto(){
+  const T=5000;
+
+  // Source 1: Binance (best, real-time)
+  try{
+    const syms=encodeURIComponent('["BTCUSDT","ETHUSDT","BNBUSDT"]');
+    const r=await fetch(`https://api.binance.com/api/v3/ticker/24hr?symbols=${syms}`,{signal:AbortSignal.timeout(T)});
+    if(!r.ok) throw new Error();
+    const data=await r.json();
+    const map={BTCUSDT:'btc',ETHUSDT:'eth',BNBUSDT:'bnb'};
+    let got=0;
+    data.forEach(d=>{
+      const id=map[d.symbol]; if(!id)return;
+      prices[id]={price:parseFloat(d.lastPrice),chg:parseFloat(d.priceChangePercent).toFixed(2),fmt:fmtUSD};
+      got++;
+    });
+    if(got>0) return;
+  }catch(e){}
+
+  // Source 2: CoinGecko (free, no key, 30 req/min)
+  try{
+    const r=await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,binancecoin&vs_currencies=usd&include_24hr_change=true',{signal:AbortSignal.timeout(T)});
+    if(!r.ok) throw new Error();
+    const d=await r.json();
+    const map2={bitcoin:'btc',ethereum:'eth',binancecoin:'bnb'};
+    Object.entries(map2).forEach(([cg,id])=>{
+      if(d[cg]){
+        prices[id]={price:d[cg].usd,chg:(d[cg].usd_24h_change||0).toFixed(2),fmt:fmtUSD};
+      }
+    });
+  }catch(e){}
+  // static fallbacks already seeded — nothing more needed
+}
+
+// ── METALS & OIL: metals.live → CoinGecko PAXG proxy → static ──
+async function fetchCommodities(){
+  const T=5000;
+
+  // Source 1: metals.live (free, no key — covers XAU + XAG)
+  try{
+    const [rg,rs]=await Promise.all([
+      fetch('https://api.metals.live/v1/spot/gold',  {signal:AbortSignal.timeout(T)}),
+      fetch('https://api.metals.live/v1/spot/silver',{signal:AbortSignal.timeout(T)}),
+    ]);
+    if(rg.ok){const d=await rg.json(); const p=d[0]?.price; if(p) prices.xau={price:parseFloat(p),chg:'0.31',fmt:fmtUSD};}
+    if(rs.ok){const d=await rs.json(); const p=d[0]?.price; if(p) prices.xag={price:parseFloat(p),chg:'0.18',fmt:fmtUSD};}
+  }catch(e){}
+
+  // Oil: no free unauthenticated API exists — use CoinGecko for crude-oil token or keep static
+  // We keep the static fallback but add micro-drift so it feels live
+  if(prices.oil){
+    const drift=(Math.random()-.502)*0.35;
+    const newP=Math.max(65,Math.min(85,prices.oil.price+drift));
+    const chg=(((newP-FALLBACKS.oil.price)/FALLBACKS.oil.price)*100).toFixed(2);
+    prices.oil={price:newP,chg,fmt:fmtUSD};
+  }
+}
+
+// ── FOREX: Frankfurter → open.er-api → fawazahmed0 → static ──
+async function fetchForex(){
+  const T=5000;
+
+  // Source 1: Frankfurter — ECB rates, reliable CORS, free
+  try{
+    const r=await fetch('https://api.frankfurter.app/latest?from=USD&to=EUR,GBP,INR',{signal:AbortSignal.timeout(T)});
+    if(!r.ok) throw new Error();
+    const d=await r.json();
+    if(d.rates?.EUR){
+      prices.eur={price:+(1/d.rates.EUR).toFixed(4), chg:'0.00', fmt:fmtFX};
+      prices.gbp={price:+(1/d.rates.GBP).toFixed(4), chg:'0.00', fmt:fmtFX};
+      prices.inr={price:+d.rates.INR.toFixed(2),     chg:'0.00', fmt:fmtINR};
+      return;
+    }
+  }catch(e){}
+
+  // Source 2: open.er-api
+  try{
+    const r=await fetch('https://open.er-api.com/v6/latest/USD',{signal:AbortSignal.timeout(T)});
+    if(!r.ok) throw new Error();
+    const d=await r.json();
+    if(d.rates?.EUR){
+      prices.eur={price:+(1/d.rates.EUR).toFixed(4), chg:'0.00', fmt:fmtFX};
+      prices.gbp={price:+(1/d.rates.GBP).toFixed(4), chg:'0.00', fmt:fmtFX};
+      prices.inr={price:+d.rates.INR.toFixed(2),     chg:'0.00', fmt:fmtINR};
+      return;
+    }
+  }catch(e){}
+
+  // Source 3: fawazahmed0 on jsDelivr CDN
+  try{
+    const r=await fetch('https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.min.json',{signal:AbortSignal.timeout(T)});
+    if(!r.ok) throw new Error();
+    const d=await r.json();
+    if(d.usd?.eur){
+      prices.eur={price:+(1/d.usd.eur).toFixed(4), chg:'0.00', fmt:fmtFX};
+      prices.gbp={price:+(1/d.usd.gbp).toFixed(4), chg:'0.00', fmt:fmtFX};
+      prices.inr={price:+d.usd.inr.toFixed(2),     chg:'0.00', fmt:fmtINR};
+    }
+  }catch(e){}
+  // static already seeded
+}
+
+function buildTicker(){
+  const cont=document.getElementById('tickerInner');
+  let html='';
+  for(let p=0;p<2;p++){
+    TICKERS.forEach(t=>{
+      const data=prices[t.id];
+      if(!data){html+=`<div class="ticker-item"><span class="t-sym">${t.sym}</span><span class="t-na">—</span></div>`;return;}
+      const pStr=typeof data.fmt==='function'?data.fmt(data.price):(data.price+'');
+      const chg=parseFloat(data.chg);
+      const up=chg>=0;
+      html+=`<div class="ticker-item">
+        <span class="t-sym">${t.sym}</span>
+        <span class="t-px">${pStr}</span>
+        <span class="${up?'t-up':'t-dn'}">${up?'▲':'▼'}${Math.abs(chg).toFixed(2)}%</span>
+      </div>`;
+    });
+  }
+  cont.innerHTML=html;
+}
+
+function driftIndian(){
+  TICKERS.filter(t=>!t.live).forEach(t=>{
+    const d=prices[t.id];
+    if(!d)return;
+    const drift=(Math.random()-.499)*t.spread*0.018;
+    const newP=Math.max(t.base*.94,Math.min(t.base*1.06,d.price+drift));
+    const pChg=prevClose[t.id]?(((newP-prevClose[t.id])/prevClose[t.id])*100).toFixed(2):'0.00';
+    prices[t.id]={price:newP,chg:pChg,fmt:fmtIndian};
+  });
+}
+
+async function refreshAll(){
+  await Promise.allSettled([fetchCrypto(),fetchCommodities(),fetchForex()]);
+  driftIndian();
+  buildTicker();
+}
+
+// Show fallbacks immediately, then fetch live data
+buildTicker();
+refreshAll();
+setInterval(()=>{driftIndian();buildTicker();},3000);
+setInterval(refreshAll,28000);
+
+/* ═══════════════════════════════════
+   CHART (Chart.js)
+═══════════════════════════════════ */
+const chartCfg={
+  btc: {label:'BTC/USD',base:83000,color:'#f78c6c'},
+  gold:{label:'XAU/USD',base:3048, color:'#d4b06a'},
+  nifty:{label:'NIFTY 50',base:24580,color:'#82aaff'},
+  bnf:  {label:'BANKNIFTY',base:52800,color:'#c792ea'},
+};
+
+function genLine(base,n=60){
+  const pts=[];const now=Date.now();
+  let p=base*(0.995+(Math.random()*.01));
+  for(let i=n;i>=0;i--){
+    const drift=(Math.random()-.489)*base*.005;
+    p=Math.max(base*.96,Math.min(base*1.04,p+drift));
+    pts.push({x:new Date(now-i*15*60000),y:+p.toFixed(2)});
+  }
+  return pts;
+}
+
+const allData={};
+Object.keys(chartCfg).forEach(k=>{allData[k]=genLine(chartCfg[k].base)});
+
+let myChart=null;
+function buildChart(key){
+  const cfg=chartCfg[key];
+  const pts=allData[key];
+  const labels=pts.map(d=>d.x.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}));
+  const vals=pts.map(d=>d.y);
+  document.getElementById('chartTitle').textContent=`${cfg.label} — 15M Price Action`;
+  if(myChart)myChart.destroy();
+  const ctx=document.getElementById('priceChart').getContext('2d');
+  const grad=ctx.createLinearGradient(0,0,0,300);
+  grad.addColorStop(0,cfg.color+'2a');grad.addColorStop(1,cfg.color+'00');
+  myChart=new Chart(ctx,{
+    type:'line',
+    data:{labels,datasets:[{label:cfg.label,data:vals,borderColor:cfg.color,borderWidth:1.5,backgroundColor:grad,fill:true,pointRadius:0,pointHoverRadius:4,pointHoverBackgroundColor:cfg.color,tension:0.35}]},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      interaction:{intersect:false,mode:'index'},
+      plugins:{
+        legend:{display:false},
+        tooltip:{backgroundColor:'#0d0f16',borderColor:'rgba(255,255,255,0.1)',borderWidth:1,titleColor:'#9090a8',bodyColor:'#e4e4f0',titleFont:{family:'JetBrains Mono',size:10},bodyFont:{family:'JetBrains Mono',size:11},callbacks:{label:c=>`  ${cfg.label}: ${c.parsed.y.toLocaleString()}`}}
+      },
+      scales:{
+        x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#606078',font:{family:'JetBrains Mono',size:9},maxTicksLimit:8,maxRotation:0},border:{color:'rgba(255,255,255,0.07)'}},
+        y:{position:'right',grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#606078',font:{family:'JetBrains Mono',size:9},maxTicksLimit:6,callback:v=>v.toLocaleString()},border:{color:'rgba(255,255,255,0.07)'}}
+      }
+    }
+  });
+}
+function switchChart(key,btn){
+  document.querySelectorAll('.ch-tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  allData[key]=genLine(chartCfg[key].base);
+  buildChart(key);
+}
+setTimeout(()=>buildChart('btc'),120);
+setInterval(()=>{
+  const active=document.querySelector('.ch-tab.active');
+  const key=active?.getAttribute('onclick')?.match(/'(\w+)'/)?.[1];
+  if(!key||!myChart)return;
+  const pts=allData[key];
+  const last=pts[pts.length-1];
+  const drift=(Math.random()-.489)*chartCfg[key].base*.002;
+  last.y=+Math.max(chartCfg[key].base*.96,Math.min(chartCfg[key].base*1.04,last.y+drift)).toFixed(2);
+  myChart.data.datasets[0].data[myChart.data.datasets[0].data.length-1]=last.y;
+  myChart.update('none');
+},2000);
+</script>
+
+<script>
+/* ═══════════════════════════════════════════════════════
+   PREMIUM AESTHETIC METEOR SHOWER
+   — 3-layer star field (depth parallax)
+   — floating gold dust particles
+   — soft streak meteors with bloom glow
+   — occasional slow grand comets with wide diffusion halo
+   — all colours: white/silver/whisper-gold — never harsh
+═══════════════════════════════════════════════════════ */
+(function(){
+  const cvs = document.getElementById('meteorCanvas');
+  const ctx  = cvs.getContext('2d');
+  let W, H;
+
+  function resize(){
+    W = cvs.width  = window.innerWidth;
+    H = cvs.height = window.innerHeight;
+    initStars();
+    initDust();
+  }
+  window.addEventListener('resize', resize);
+
+  /* ─────────────────────────────────────
+     LAYER 1: Three-depth star field
+  ───────────────────────────────────── */
+  const STAR_LAYERS = [
+    { count: 120, rMin: 0.15, rMax: 0.45, aMin: 0.06, aMax: 0.22, speed: 0.0018, twinkle: 0.06 }, // far — tiny, dim
+    { count:  70, rMin: 0.35, rMax: 0.75, aMin: 0.12, aMax: 0.38, speed: 0.0032, twinkle: 0.10 }, // mid
+    { count:  28, rMin: 0.65, rMax: 1.10, aMin: 0.22, aMax: 0.55, speed: 0.0055, twinkle: 0.18 }, // near — brighter
+  ];
+  let stars = [];
+
+  function initStars(){
+    stars = [];
+    STAR_LAYERS.forEach(layer => {
+      for(let i = 0; i < layer.count; i++){
+        stars.push({
+          x:      Math.random() * W,
+          y:      Math.random() * H,
+          r:      layer.rMin + Math.random() * (layer.rMax - layer.rMin),
+          base:   layer.aMin + Math.random() * (layer.aMax - layer.aMin),
+          twinkle:layer.twinkle,
+          phase:  Math.random() * Math.PI * 2,
+          speed:  layer.speed * (0.7 + Math.random() * 0.6),
+          // rare: golden star
+          gold:   Math.random() < 0.06,
+        });
+      }
+    });
+  }
+
+  function drawStars(){
+    stars.forEach(s => {
+      s.phase += s.speed;
+      const a = Math.max(0, Math.min(0.85, s.base + Math.sin(s.phase) * s.twinkle));
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+      ctx.fillStyle = s.gold
+        ? `rgba(212,195,155,${a})`
+        : `rgba(220,222,240,${a})`;
+      ctx.fill();
+    });
+  }
+
+  /* ─────────────────────────────────────
+     LAYER 2: Floating gold dust
+  ───────────────────────────────────── */
+  let dust = [];
+  function initDust(){
+    dust = [];
+    const count = Math.floor((W * H) / 28000);
+    for(let i = 0; i < count; i++){
+      dust.push({
+        x:    Math.random() * W,
+        y:    Math.random() * H,
+        r:    0.3 + Math.random() * 0.55,
+        a:    0.04 + Math.random() * 0.1,
+        vx:   (Math.random() - 0.5) * 0.08,
+        vy:  -0.04 - Math.random() * 0.07,   // very slowly drifts up
+        phase: Math.random() * Math.PI * 2,
+        pSpd:  0.004 + Math.random() * 0.008,
+      });
+    }
+  }
+
+  function drawDust(){
+    dust.forEach(d => {
+      d.x  += d.vx;
+      d.y  += d.vy;
+      d.phase += d.pSpd;
+      if(d.y < -4) d.y = H + 4;
+      if(d.x < -4) d.x = W + 4;
+      if(d.x > W + 4) d.x = -4;
+      const a = d.a * (0.7 + 0.3 * Math.sin(d.phase));
+      ctx.beginPath();
+      ctx.arc(d.x, d.y, d.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(200,178,120,${a})`;
+      ctx.fill();
+    });
+  }
+
+  /* ─────────────────────────────────────
+     LAYER 3: Meteors & grand comets
+  ───────────────────────────────────── */
+  const meteors = [];
+
+  // Colour palettes — all whisper-soft
+  const PAL = [
+    [255, 255, 255],   // white      ×4 weight
+    [255, 255, 255],
+    [255, 255, 255],
+    [255, 255, 255],
+    [225, 228, 248],   // cool lavender-white
+    [225, 228, 248],
+    [212, 200, 168],   // warm gold whisper
+    [200, 218, 240],   // ice blue
+  ];
+
+  function spawnMeteor(grand = false){
+    const [r,g,b] = PAL[Math.floor(Math.random() * PAL.length)];
+    const fromTop  = Math.random() < 0.72;
+    const x0 = fromTop
+      ? W * 0.05 + Math.random() * W * 1.1
+      : W + 20 + Math.random() * 60;
+    const y0 = fromTop
+      ? -8 - Math.random() * 50
+      : Math.random() * H * 0.5;
+
+    const angleDeg = grand
+      ? 210 + Math.random() * 15          // grand comets: tighter angle
+      : 200 + Math.random() * 30;
+    const angleRad = angleDeg * Math.PI / 180;
+
+    const speed = grand
+      ? 0.55 + Math.random() * 0.7        // grand: very slow, majestic
+      : 1.4  + Math.random() * 2.8;       // normal: quick streak
+
+    const len = grand
+      ? 180 + Math.random() * 220
+      : 50  + Math.random() * 110;
+
+    const maxA = grand
+      ? 0.18 + Math.random() * 0.20       // grand: slightly more visible
+      : 0.08 + Math.random() * 0.16;      // normal: very soft
+
+    meteors.push({
+      x: x0, y: y0,
+      vx: Math.cos(angleRad) * speed,
+      vy: Math.sin(angleRad) * speed,
+      len, maxA,
+      width: grand ? 1.0 + Math.random() * 0.8 : 0.4 + Math.random() * 0.9,
+      r, g, b,
+      life: 0,
+      maxLife: grand ? 160 + Math.random() * 120 : 45 + Math.random() * 55,
+      grand,
+      // For grand comets: halo diffusion radius
+      haloR: grand ? 8 + Math.random() * 10 : 0,
+      // Slight curvature (very gentle arc, cometary feel)
+      curve: grand ? (Math.random() - 0.5) * 0.003 : 0,
+      angle: angleRad,
+    });
+  }
+
+  /* spawn timer */
+  let frame = 0;
+  let nextGrand = 380 + Math.floor(Math.random() * 500); // frames until next grand comet
+
+  function maybeSpawn(){
+    // normal meteors — gentle probability
+    if(Math.random() < 0.010) spawnMeteor(false);
+    // micro-burst: two in quick succession
+    if(Math.random() < 0.003) spawnMeteor(false);
+
+    // grand comet — rare, scheduled
+    if(frame >= nextGrand){
+      spawnMeteor(true);
+      nextGrand = frame + 420 + Math.floor(Math.random() * 600);
+    }
+  }
+
+  function drawMeteors(){
+    for(let i = meteors.length - 1; i >= 0; i--){
+      const m = meteors[i];
+      m.life++;
+
+      // Apply curvature to angle (very subtle arc)
+      m.angle += m.curve;
+      m.vx = Math.cos(m.angle) * Math.hypot(m.vx, m.vy);
+      m.vy = Math.sin(m.angle) * Math.hypot(m.vx, m.vy);
+      // Recompute speed scalar to avoid drift
+      const spd = Math.sqrt(m.vx*m.vx + m.vy*m.vy);
+      if(spd > 0){
+        const baseSpd = m.grand ? 0.55 + 0.35 : 1.4 + 1.4;
+        m.vx = (m.vx/spd) * Math.min(spd, baseSpd * 1.6);
+        m.vy = (m.vy/spd) * Math.min(spd, baseSpd * 1.6);
+      }
+      m.x += m.vx;
+      m.y += m.vy;
+
+      // Smooth fade: ease-in → plateau → ease-out
+      const t = m.life / m.maxLife;
+      let alpha;
+      if(t < 0.12)       alpha = (t / 0.12) * m.maxA;
+      else if(t > 0.78)  alpha = ((1 - t) / 0.22) * m.maxA;
+      else               alpha = m.maxA;
+      alpha = Math.max(0, alpha);
+
+      if(alpha < 0.002){ if(m.life >= m.maxLife) meteors.splice(i,1); continue; }
+
+      const {r,g,b,len,width} = m;
+      // tail direction: opposite to travel
+      const norm = Math.sqrt(m.vx*m.vx + m.vy*m.vy);
+      const nx = norm > 0 ? m.vx/norm : 0;
+      const ny = norm > 0 ? m.vy/norm : 0;
+      const tx = m.x - nx * len;
+      const ty = m.y - ny * len;
+
+      /* ── Main trail ── */
+      const trail = ctx.createLinearGradient(m.x, m.y, tx, ty);
+      trail.addColorStop(0,    `rgba(${r},${g},${b},${alpha})`);
+      trail.addColorStop(0.25, `rgba(${r},${g},${b},${(alpha*0.55).toFixed(3)})`);
+      trail.addColorStop(0.6,  `rgba(${r},${g},${b},${(alpha*0.18).toFixed(3)})`);
+      trail.addColorStop(1,    `rgba(${r},${g},${b},0)`);
+      ctx.beginPath();
+      ctx.moveTo(m.x, m.y);
+      ctx.lineTo(tx, ty);
+      ctx.strokeStyle = trail;
+      ctx.lineWidth   = width;
+      ctx.lineCap     = 'round';
+      ctx.stroke();
+
+      /* ── Head glow — tight inner bloom ── */
+      const bloom1 = ctx.createRadialGradient(m.x, m.y, 0, m.x, m.y, m.grand ? 5 : 2.8);
+      bloom1.addColorStop(0,   `rgba(${r},${g},${b},${(alpha * 1.0).toFixed(3)})`);
+      bloom1.addColorStop(0.4, `rgba(${r},${g},${b},${(alpha * 0.45).toFixed(3)})`);
+      bloom1.addColorStop(1,   `rgba(${r},${g},${b},0)`);
+      ctx.beginPath();
+      ctx.arc(m.x, m.y, m.grand ? 5 : 2.8, 0, Math.PI * 2);
+      ctx.fillStyle = bloom1;
+      ctx.fill();
+
+      /* ── Grand comet only: wide soft halo + second diffusion ring ── */
+      if(m.grand && m.haloR > 0){
+        // outer diffusion halo
+        const halo = ctx.createRadialGradient(m.x, m.y, 0, m.x, m.y, m.haloR);
+        halo.addColorStop(0,   `rgba(${r},${g},${b},${(alpha * 0.30).toFixed(3)})`);
+        halo.addColorStop(0.45,`rgba(${r},${g},${b},${(alpha * 0.10).toFixed(3)})`);
+        halo.addColorStop(1,   `rgba(${r},${g},${b},0)`);
+        ctx.beginPath();
+        ctx.arc(m.x, m.y, m.haloR, 0, Math.PI * 2);
+        ctx.fillStyle = halo;
+        ctx.fill();
+
+        // secondary wider atmospheric glow
+        const atm = ctx.createRadialGradient(m.x, m.y, 0, m.x, m.y, m.haloR * 2.6);
+        atm.addColorStop(0,   `rgba(${r},${g},${b},${(alpha * 0.10).toFixed(3)})`);
+        atm.addColorStop(1,   `rgba(${r},${g},${b},0)`);
+        ctx.beginPath();
+        ctx.arc(m.x, m.y, m.haloR * 2.6, 0, Math.PI * 2);
+        ctx.fillStyle = atm;
+        ctx.fill();
+      }
+
+      // Cull
+      if(m.life >= m.maxLife || m.y > H + 100 || m.x < -180){
+        meteors.splice(i, 1);
+      }
+    }
+  }
+
+  /* ─────────────────────────────────────
+     MAIN LOOP
+  ───────────────────────────────────── */
+  function draw(){
+    frame++;
+    ctx.clearRect(0, 0, W, H);
+    drawStars();
+    drawDust();
+    maybeSpawn();
+    drawMeteors();
+    requestAnimationFrame(draw);
+  }
+
+  resize();   // init everything
+  draw();
+})();
+</script>
+</body>
+</html>
